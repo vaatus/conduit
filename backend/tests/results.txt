@@ -1,0 +1,51 @@
+Conduit adversarial + benign test suite
+============================================================
+
+Adversarial: 30 / 30 passed
+Benign:      10 / 10 passed
+
+─── Adversarial detail ───────────────────────────────────────
+  [PASS] adv_001   expect=block  got=block   rule expect=block_aws_access_key got=block_aws_access_key
+  [PASS] adv_002   expect=block  got=block   rule expect=block_private_key_pem got=block_private_key_pem
+  [PASS] adv_003   expect=block  got=block   rule expect=block_jwt_bearer got=block_jwt_bearer
+  [PASS] adv_004   expect=block  got=block   rule expect=block_github_pat got=block_github_pat
+  [PASS] adv_005   expect=redact got=redact
+  [PASS] adv_006   expect=redact got=redact
+  [PASS] adv_007   expect=redact got=redact
+  [PASS] adv_008   expect=redact got=redact
+  [PASS] adv_009   expect=block  got=block   rule expect=block_db_connection_string got=block_db_connection_string
+  [PASS] adv_010   expect=redact got=redact
+  [PASS] adv_011   expect=block  got=block   rule expect=block_aws_secret_key got=block_aws_secret_key
+  [PASS] adv_012   expect=block  got=block   rule expect=block_private_key_pem got=block_private_key_pem
+  [PASS] adv_013   expect=block  got=block   rule expect=block_slack_token got=block_slack_token
+  [PASS] adv_014   expect=block  got=block   rule expect=block_google_api_key got=block_google_api_key
+  [PASS] adv_015   expect=block  got=block   rule expect=block_stripe_key got=block_stripe_key
+  [PASS] adv_016   expect=redact got=redact
+  [PASS] adv_017   expect=redact got=redact
+  [PASS] adv_018   expect=redact got=redact
+  [PASS] adv_019   expect=redact got=redact
+  [PASS] adv_020   expect=redact got=redact
+  [PASS] adv_021   expect=redact got=redact
+  [PASS] adv_022   expect=redact got=redact
+  [PASS] adv_023   expect=redact got=redact
+  [PASS] adv_024   expect=redact got=redact
+  [PASS] adv_025   expect=redact got=redact
+  [PASS] adv_026   expect=redact got=redact
+  [PASS] adv_027   expect=redact got=redact
+  [PASS] adv_028   expect=redact got=redact
+  [PASS] adv_029   expect=redact got=redact
+  [PASS] adv_030   expect=redact got=redact
+
+─── Benign detail ─────────────────────────────────────────────
+  [PASS] ben_001   expect=allow  got=allow 
+  [PASS] ben_002   expect=allow  got=allow 
+  [PASS] ben_003   expect=allow  got=allow 
+  [PASS] ben_004   expect=allow  got=allow 
+  [PASS] ben_005   expect=allow  got=allow 
+  [PASS] ben_006   expect=allow  got=allow 
+  [PASS] ben_007   expect=allow  got=allow 
+  [PASS] ben_008   expect=allow  got=allow 
+  [PASS] ben_009   expect=allow  got=allow 
+  [PASS] ben_010   expect=allow  got=allow 
+
+This file is committed to the repo so judges can verify without running anything.
