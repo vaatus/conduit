@@ -1,0 +1,79 @@
+# SPDX-License-Identifier: MIT
+# One-command bring-up for Conduit. After `docker-compose up -d`:
+#   • backend  → http://localhost:8001/  (POST /inspect, GET /events, GET /stats)
+#   • dashboard → http://localhost:3000/
+#   • lobster-trap → http://localhost:8000/_lobstertrap/ (audit UI)
+# Then load ./extension unpacked in chrome://extensions.
+
+services:
+  lobster-trap:
+    # Veea reference image. If your environment is offline, build from the cloned
+    # github.com/veeainc/lobstertrap repo (see lobster_trap/README.md).
+    image: veeainc/lobstertrap:latest
+    container_name: conduit-lobster-trap
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./lobster_trap/policy.yaml:/policies/policy.yaml:ro
+    environment:
+      LT_POLICY_FILE: /policies/policy.yaml
+      LT_UPSTREAM_OPENAI_BASE_URL: https://generativelanguage.googleapis.com/v1beta/openai/
+      LT_INSPECT_HTTP_ENABLED: "true"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/_lobstertrap/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    container_name: conduit-backend
+    ports:
+      - "8001:8001"
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      LT_INSPECT_URL: http://lobster-trap:8000/_lobstertrap/inspect
+      LT_GEMINI_BASE_URL: http://lobster-trap:8000/v1/
+      LT_POLICY_PATH: /policies/policy.yaml
+      LT_MOCK_MODE: ${LT_MOCK_MODE:-false}
+      GEMINI_MODEL_CLASSIFY: gemini-2.5-flash
+      GEMINI_MODEL_SANITIZE: gemini-2.5-pro
+      GEMINI_MODEL_NARRATIVE: gemini-2.5-pro
+      DB_PATH: /data/events.db
+      BACKEND_PORT: "8001"
+      ALLOWED_ORIGINS: "chrome-extension://*,http://localhost:3000"
+    volumes:
+      - ./data:/data
+      - ./lobster_trap/policy.yaml:/policies/policy.yaml:ro
+    depends_on:
+      lobster-trap:
+        condition: service_healthy
+
+  dashboard:
+    build: ./dashboard
+    container_name: conduit-dashboard
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API: http://localhost:8001
+    depends_on:
+      - backend
+
+  mcp-server:
+    build: ./mcp_server
+    container_name: conduit-mcp
+    # Streamable HTTP transport — remote agents (internal copilots, Slack bots,
+    # incident-response bots) connect over the network. For Claude Desktop, run
+    # `uvx --from ./mcp_server conduit-mcp` locally instead (stdio transport).
+    ports:
+      - "8765:8765"
+    environment:
+      CONDUIT_BACKEND_URL: http://backend:8001
+      MCP_TRANSPORT: http
+      MCP_HTTP_HOST: 0.0.0.0
+      MCP_HTTP_PORT: "8765"
+    volumes:
+      - ./lobster_trap/policy.yaml:/policies/policy.yaml:ro
+      - ./backend/tests/results.txt:/data/results.txt:ro
+    depends_on:
+      - backend
