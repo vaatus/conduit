@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "Conduit — Shadow AI Governance",
+  "version": "0.1.0",
+  "description": "Inspects prompts before they leave to public LLMs. Powered by Veea Lobster Trap + Gemini.",
+  "permissions": ["storage", "scripting"],
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*",
+    "https://claude.ai/*",
+    "https://gemini.google.com/*",
+    "https://copilot.microsoft.com/*",
+    "https://www.perplexity.ai/*",
+    "http://localhost:8001/*"
+  ],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [{
+    "matches": [
+      "https://chatgpt.com/*",
+      "https://chat.openai.com/*",
+      "https://claude.ai/*",
+      "https://gemini.google.com/*",
+      "https://copilot.microsoft.com/*",
+      "https://www.perplexity.ai/*"
+    ],
+    "js": ["content.js"],
+    "run_at": "document_idle",
+    "all_frames": false
+  }],
+  "web_accessible_resources": [{
+    "resources": ["modal/modal.html", "modal/modal.css"],
+    "matches": ["<all_urls>"]
+  }],
+  "icons": {
+    "16": "icons/16.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  }
+}
