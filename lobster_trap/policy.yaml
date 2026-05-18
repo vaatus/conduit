@@ -1,0 +1,248 @@
+# SPDX-License-Identifier: MIT
+# ─── Conduit Corporate-Egress Policy v1 ────────────────────────────────────
+# This is the Veea-prize centerpiece. Every rule is annotated with:
+#   • what data class it targets
+#   • why we picked this enforcement (DENY vs REDACT vs FLAG)
+#   • the realistic false-positive risk
+# The companion walkthrough lives at docs/policy-explainer.md.
+#
+# Direction model:
+#   ingress_rules  → applied to EMPLOYEE→LLM prompts (Conduit's primary surface)
+#   egress_rules   → applied to LLM→backend responses (defense-in-depth, so a
+#                    poisoned model response cannot smuggle creds back to us)
+# ───────────────────────────────────────────────────────────────────────────
+
+version: "1.0"
+policy_name: "conduit-corporate-egress-v1"
+default_action: ALLOW
+
+ingress_rules:
+
+  # ────────── CRITICAL: hard-block credentials and keys ──────────
+  # These never have a legitimate reason to appear in a public-LLM prompt.
+  # FP risk: a developer pastes a *fake* AKIA-prefixed string from docs.
+  # Acceptable: the LT audit log gives the user a clear reason and link.
+
+  - name: block_aws_access_key
+    description: "AWS access key ID — hard exfiltration vector (LayerX 2026 §4.2)"
+    priority: 100
+    action: DENY
+    deny_message: "[CONDUIT] AWS access key detected. Use the internal AI gateway."
+    conditions:
+      - field: body
+        match_type: regex
+        value: "AKIA[0-9A-Z]{16}"
+
+  - name: block_aws_secret_key
+    description: "AWS secret access key declared in body"
+    priority: 100
+    action: DENY
+    deny_message: "[CONDUIT] AWS secret key detected. Rotate it now and use the internal AI gateway."
+    conditions:
+      - field: body
+        match_type: regex
+        value: "(?i)aws_secret_access_key\\s*[:=]\\s*[A-Za-z0-9/+=]{40}"
+
+  - name: block_private_key_pem
+    description: "PEM/SSH/PGP private key blocks — highest-severity credential leak"
+    priority: 100
+    action: DENY
+    deny_message: "[CONDUIT] Private key detected. This cannot be sent to a public LLM."
+    conditions:
+      - field: body
+        match_type: regex
+        value: "-----BEGIN (RSA |OPENSSH |EC |DSA |PGP |ENCRYPTED )?PRIVATE KEY"
+
+  - name: block_jwt_bearer
+    description: "JWT bearer token (very high false-negative cost — a leaked JWT often = full session takeover)"
+    priority: 95
+    action: DENY
+    deny_message: "[CONDUIT] Bearer token detected. Revoke it and use the internal AI gateway."
+    conditions:
+      - field: body
+        match_type: regex
+        value: "eyJ[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9_-]{10,}"
+
+  - name: block_github_pat
+    description: "GitHub personal access token / fine-grained token (both classic ghp_ and github_pat_ formats)"
+    priority: 95
+    action: DENY
+    deny_message: "[CONDUIT] GitHub token detected. Rotate it in GitHub settings."
+    conditions:
+      - field: body
+        match_type: regex
+        value: "(gh[pousr]_|github_pat_)[A-Za-z0-9_]{20,}"
+
+  - name: block_db_connection_string
+    description: "Database connection strings with embedded credentials"
+    priority: 95
+    action: DENY
+    deny_message: "[CONDUIT] Database credentials detected in a connection string."
+    conditions:
+      - field: body
+        match_type: regex
+        value: "(?i)(server|host|data source)\\s*=\\s*[^;\\s]+;.*?(user|uid)\\s*=\\s*[^;\\s]+;.*?(pwd|password)\\s*=\\s*[^;\\s]+"
+
+  - name: block_slack_token
+    description: "Slack bot/user/legacy tokens"
+    priority: 95
+    action: DENY
+    deny_message: "[CONDUIT] Slack token detected."
+    conditions:
+      - field: body
+        match_type: regex
+        value: "xox[baprs]-[A-Za-z0-9-]{10,}"
+
+  - name: block_google_api_key
+    description: "Google API key (AIza prefix, used by GCP / Maps / Firebase)"
+    priority: 95
+    action: DENY
+    deny_message: "[CONDUIT] Google API key detected."
+    conditions:
+      - field: body
+        match_type: regex
+        value: "AIza[0-9A-Za-z_-]{35}"
+
+  - name: block_stripe_key
+    description: "Stripe live secret key"
+    priority: 95
+    action: DENY
+    deny_message: "[CONDUIT] Stripe live key detected. Rotate it immediately."
+    conditions:
+      - field: body
+        match_type: regex
+        value: "sk_live_[0-9a-zA-Z]{24,}"
+
+  # ────────── HIGH: regulated PII — redact, do not block ──────────
+  # Blocking is too aggressive — employees legitimately need help with
+  # customer data. Redact preserves intent; sanitized version goes out.
+
+  - name: redact_us_ssn
+    description: "US Social Security Number"
+    priority: 80
+    action: REDACT
+    redact_pattern: "\\b(?!000|666|9\\d{2})\\d{3}-(?!00)\\d{2}-(?!0000)\\d{4}\\b"
+    redact_with: "[SSN]"
+
+  - name: redact_credit_card
+    description: "Credit card number (loose Luhn-free pattern, refined by Gemini check)"
+    priority: 80
+    action: REDACT
+    redact_pattern: "\\b(?:\\d[ -]*?){13,16}\\b"
+    redact_with: "[CC]"
+
+  - name: redact_email_addresses
+    description: "Email addresses redacted before egress"
+    priority: 70
+    action: REDACT
+    redact_pattern: "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
+    redact_with: "[EMAIL]"
+
+  - name: redact_phone_numbers_us
+    description: "US phone numbers"
+    priority: 70
+    action: REDACT
+    redact_pattern: "\\+?1?[-.\\s]?\\(?\\d{3}\\)?[-.\\s]?\\d{3}[-.\\s]?\\d{4}"
+    redact_with: "[PHONE]"
+
+  - name: redact_iban
+    description: "International bank account number"
+    priority: 75
+    action: REDACT
+    redact_pattern: "[A-Z]{2}\\d{2}[A-Z0-9]{4,30}"
+    redact_with: "[IBAN]"
+
+  # ────────── MEDIUM: flag for semantic review by Gemini ──────────
+  # The regex cannot decide whether code is proprietary or whether a
+  # customer-record column header is just a tutorial. FLAG hands the
+  # decision to Gemini 2.5 Flash for structured classification.
+
+  - name: flag_source_code_indicators
+    description: "Code-like content — Gemini classifies whether it's proprietary"
+    priority: 60
+    action: FLAG
+    conditions:
+      - field: body
+        match_type: regex
+        value: "(?m)^\\s*(function\\s+\\w+\\s*\\(|class\\s+\\w+|import\\s+[\\w.]+|def\\s+\\w+\\s*\\(|public\\s+class\\s+\\w+|package\\s+[\\w.]+;)"
+
+  - name: flag_internal_hostnames
+    description: "Internal-looking domains (.internal, .corp, .local, .intra)"
+    priority: 60
+    action: FLAG
+    conditions:
+      - field: body
+        match_type: regex
+        value: "https?:\\/\\/[\\w.-]+\\.(internal|corp|local|intra)"
+
+  - name: flag_customer_record_columns
+    description: "Customer-record-like tabular paste — column headers screaming CRM dump"
+    priority: 65
+    action: FLAG
+    conditions:
+      - field: body
+        match_type: regex
+        value: "(?i)(customer[_\\s]?id|account[_\\s]?number|policy[_\\s]?number|patient[_\\s]?id|mrn)\\s*[:=,]"
+
+  - name: flag_phi_markers
+    description: "PHI markers — HIPAA exposure"
+    priority: 70
+    action: FLAG
+    conditions:
+      - field: body
+        match_type: regex
+        value: "(?i)(diagnosis|icd-?10|dob:|date of birth:|mrn:|prescription:|rx#)"
+
+  - name: flag_strategy_or_finance_markers
+    description: "Material non-public info markers (MNPI / M&A / forecasts)"
+    priority: 65
+    action: FLAG
+    conditions:
+      - field: body
+        match_type: regex
+        value: "(?i)(q[1-4] forecast|board deck|m&a|merger|acquisition target|earnings preview|term sheet|project polaris)"
+
+  - name: flag_prompt_injection_attempt
+    description: "Common prompt-injection scaffolding the employee might unknowingly paste"
+    priority: 55
+    action: FLAG
+    conditions:
+      - field: body
+        match_type: regex
+        value: "(?i)(ignore (all )?previous instructions|system prompt[:=]|you are now [a-z]+ mode|<\\|im_start\\|>)"
+
+# Built-in detectors — keep ALL on for prize-eligibility breadth
+detect_prompt_injection: true
+detect_credential_exposure: true
+detect_pii_leakage: true
+detect_data_exfiltration: true
+
+# ───────────────────────────────────────────────────────────────────
+# EGRESS rules — applied to LT's own forwarded Gemini responses.
+# Mostly defensive: a poisoned model response shouldn't smuggle
+# credentials back into our backend either.
+# ───────────────────────────────────────────────────────────────────
+egress_rules:
+  - name: block_credential_emission
+    description: "Even Gemini's response can't contain a credential we'd then log"
+    priority: 100
+    action: DENY
+    conditions:
+      - field: body
+        match_type: regex
+        value: "AKIA[0-9A-Z]{16}|-----BEGIN .*PRIVATE KEY"
+
+  - name: block_response_pii_echo
+    description: "Defense-in-depth: model shouldn't echo PII back if we sanitized it"
+    priority: 80
+    action: REDACT
+    redact_pattern: "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
+    redact_with: "[EMAIL]"
+
+# Network policy — backend's only legitimate outbound is to Gemini via LT.
+# If the backend ever tries to reach a non-allow-listed domain, LT denies it.
+network_policy:
+  allow_domains:
+    - "generativelanguage.googleapis.com"
+  deny_domains:
+    - "*"

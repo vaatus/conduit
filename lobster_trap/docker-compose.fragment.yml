@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT
+# Referenced from the root docker-compose.yml. Kept here so the Veea team can
+# vendor just the lobster_trap/ directory if they want to inspect the policy
+# without the rest of the stack.
+lobster-trap:
+  image: veeainc/lobstertrap:latest
+  ports:
+    - "8000:8000"
+  volumes:
+    - ./policy.yaml:/policies/policy.yaml:ro
+  environment:
+    LT_POLICY_FILE: /policies/policy.yaml
+    LT_UPSTREAM_OPENAI_BASE_URL: https://generativelanguage.googleapis.com/v1beta/openai/
+    LT_INSPECT_HTTP_ENABLED: "true"
