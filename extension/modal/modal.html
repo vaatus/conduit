@@ -1,0 +1,114 @@
+<!-- SPDX-License-Identifier: MIT -->
+<!-- Rendered inside a Shadow DOM root on the host AI domain. No leaking styles. -->
+<div id="conduit-root">
+
+  <!-- ALLOW toast ──────────────────────────────────────── -->
+  <div id="conduit-toast" role="status" aria-live="polite">
+    <span class="check">✓</span>
+    <span class="text">Inspected by Conduit — clean</span>
+  </div>
+
+  <!-- REDACT modal ─────────────────────────────────────── -->
+  <div id="conduit-redact" class="conduit-modal" role="dialog" aria-modal="true" aria-labelledby="conduit-redact-title">
+    <div class="conduit-backdrop"></div>
+    <div class="conduit-panel">
+      <header class="conduit-header redact">
+        <div>
+          <h1 id="conduit-redact-title">Sensitive content detected</h1>
+          <p>
+            Conduit's Lobster Trap matched policy rule
+            <code id="conduit-redact-rule"></code>.
+            Categories: <strong id="conduit-redact-categories"></strong>
+            · severity <strong id="conduit-redact-severity"></strong>
+          </p>
+        </div>
+      </header>
+
+      <p class="conduit-audit" id="conduit-redact-audit"></p>
+
+      <div class="conduit-diff">
+        <section>
+          <header><span class="badge danger">Original</span></header>
+          <pre id="conduit-redact-original" aria-label="Original prompt"></pre>
+        </section>
+        <section>
+          <header><span class="badge success">Sanitized by Gemini</span></header>
+          <pre id="conduit-redact-sanitized" aria-label="Sanitized prompt"></pre>
+        </section>
+      </div>
+
+      <footer class="conduit-actions">
+        <button class="conduit-btn ghost" id="conduit-redact-cancel">Cancel paste</button>
+        <button class="conduit-btn warn" id="conduit-redact-keep">Send original anyway</button>
+        <button class="conduit-btn primary" id="conduit-redact-accept">Use sanitized version</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- BLOCK modal ──────────────────────────────────────── -->
+  <div id="conduit-block" class="conduit-modal" role="alertdialog" aria-modal="true" aria-labelledby="conduit-block-title">
+    <div class="conduit-backdrop"></div>
+    <div class="conduit-panel small">
+      <header class="conduit-header block">
+        <div>
+          <h1 id="conduit-block-title">Blocked — corporate data egress</h1>
+          <p>This prompt cannot be sent to a public LLM. Matched policy rule <code id="conduit-block-rule"></code>.</p>
+        </div>
+      </header>
+      <p class="conduit-audit" id="conduit-block-message"></p>
+      <footer class="conduit-actions">
+        <button class="conduit-btn primary" id="conduit-block-close">Dismiss</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- IMAGE REDACT modal (Gemini Vision) ─────────────────── -->
+  <div id="conduit-image-redact" class="conduit-modal" role="dialog" aria-modal="true" aria-labelledby="conduit-image-redact-title">
+    <div class="conduit-backdrop"></div>
+    <div class="conduit-panel">
+      <header class="conduit-header redact">
+        <div>
+          <h1 id="conduit-image-redact-title">Screenshot inspected by Gemini Vision</h1>
+          <p>
+            UI type: <strong id="conduit-image-ui-type"></strong>
+            · severity <strong id="conduit-image-severity"></strong>
+            · categories <strong id="conduit-image-categories"></strong>
+          </p>
+        </div>
+      </header>
+      <p class="conduit-audit" id="conduit-image-audit"></p>
+      <div class="conduit-diff">
+        <section>
+          <header><span class="badge danger">Extracted (OCR)</span></header>
+          <pre id="conduit-image-extracted" aria-label="Text extracted from image"></pre>
+        </section>
+        <section>
+          <header><span class="badge success">Safe text alternative</span></header>
+          <pre id="conduit-image-alternative" aria-label="Generated safe alternative"></pre>
+        </section>
+      </div>
+      <footer class="conduit-actions">
+        <button class="conduit-btn ghost" id="conduit-image-cancel">Discard image</button>
+        <button class="conduit-btn primary" id="conduit-image-accept">Paste safe alternative</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- IMAGE BLOCK modal ─────────────────────────────────── -->
+  <div id="conduit-image-block" class="conduit-modal" role="alertdialog" aria-modal="true" aria-labelledby="conduit-image-block-title">
+    <div class="conduit-backdrop"></div>
+    <div class="conduit-panel small">
+      <header class="conduit-header block">
+        <div>
+          <h1 id="conduit-image-block-title">Screenshot blocked</h1>
+          <p>Image type <code id="conduit-image-block-ui"></code> contains content that cannot be sent to a public LLM.</p>
+        </div>
+      </header>
+      <p class="conduit-audit" id="conduit-image-block-message"></p>
+      <footer class="conduit-actions">
+        <button class="conduit-btn primary" id="conduit-image-block-close">Dismiss</button>
+      </footer>
+    </div>
+  </div>
+
+</div>
