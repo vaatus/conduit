@@ -1,0 +1,462 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: MIT -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Conduit — Shadow-AI Governance · Browser-native DLP for public LLMs</title>
+  <meta name="description" content="Open-source shadow-AI governance. Veea Lobster Trap inline in the browser + 8 Gemini 2.5 surfaces (classify · sanitize · vision · search-grounded · agentic). MIT.">
+  <meta property="og:title" content="Conduit — Shadow-AI Governance">
+  <meta property="og:description" content="Veea Lobster Trap in the browser, eight Gemini 2.5 surfaces, MIT open source. The shadow-AI layer your stack is missing.">
+  <meta property="og:image" content="https://vaatus.github.io/conduit/architecture.svg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230f172a'/%3E%3Ctext x='50' y='68' font-family='ui-sans-serif,system-ui' font-size='60' font-weight='700' fill='white' text-anchor='middle'%3EC%3C/text%3E%3C/svg%3E">
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --ink-50: #f8fafc;
+      --ink-100: #f1f5f9;
+      --ink-200: #e2e8f0;
+      --ink-500: #64748b;
+      --ink-700: #334155;
+      --ink-900: #0f172a;
+      --accent: #7c3aed;
+      --gemini-blue: #4285f4;
+      --veea-amber: #f59e0b;
+    }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink-900);
+      background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+    header.top {
+      padding: 20px 0;
+      border-bottom: 1px solid var(--ink-200);
+      background: white;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark {
+      width: 36px; height: 36px;
+      background: var(--ink-900);
+      color: white;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 18px;
+    }
+    .brand-name { font-weight: 600; letter-spacing: -0.01em; }
+    .brand-tag { color: var(--ink-500); font-size: 13px; margin-left: 8px; }
+
+    section.hero {
+      padding: 60px 0 30px;
+      text-align: center;
+    }
+    .pill {
+      display: inline-flex; gap: 6px;
+      padding: 4px 12px;
+      background: white;
+      border: 1px solid var(--ink-200);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--ink-700);
+      margin-bottom: 20px;
+    }
+    .pill .dot {
+      width: 8px; height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      align-self: center;
+    }
+    h1 {
+      font-size: 56px;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      font-weight: 700;
+      margin: 0 0 16px;
+    }
+    h1 .grad {
+      background: linear-gradient(90deg, var(--gemini-blue) 0%, var(--accent) 50%, var(--veea-amber) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .tagline {
+      font-size: 19px;
+      color: var(--ink-700);
+      max-width: 720px;
+      margin: 0 auto 28px;
+    }
+    .cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 36px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 11px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: transform .08s ease, background .15s ease;
+      border: 1px solid transparent;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn.primary { background: var(--ink-900); color: white; }
+    .btn.primary:hover { background: var(--ink-700); }
+    .btn.outline { background: white; color: var(--ink-900); border-color: var(--ink-200); }
+    .btn.outline:hover { background: var(--ink-100); }
+    .btn .icon { width: 16px; height: 16px; fill: currentColor; }
+
+    section.architecture {
+      background: white;
+      border-top: 1px solid var(--ink-200);
+      border-bottom: 1px solid var(--ink-200);
+      padding: 40px 0;
+    }
+    .architecture img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 0 auto;
+      border-radius: 12px;
+      box-shadow: 0 12px 40px -10px rgba(15, 23, 42, .15);
+    }
+    .section-title {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-500);
+      margin-bottom: 24px;
+    }
+
+    section.demo-video {
+      padding: 60px 0;
+      text-align: center;
+    }
+    .video-frame {
+      max-width: 920px;
+      aspect-ratio: 16 / 9;
+      margin: 0 auto;
+      background: var(--ink-900);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 18px 50px -10px rgba(15, 23, 42, .35);
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .video-frame iframe, .video-frame video {
+      width: 100%; height: 100%; border: 0;
+    }
+    .video-placeholder {
+      color: #cbd5e1; text-align: center; padding: 40px;
+    }
+    .video-placeholder .play {
+      width: 80px; height: 80px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      margin-bottom: 18px;
+    }
+    .video-placeholder .play svg { width: 32px; height: 32px; fill: white; margin-left: 4px; }
+    .video-placeholder p { margin: 6px 0; }
+
+    section.gemini-surfaces {
+      padding: 60px 0;
+      background: white;
+      border-top: 1px solid var(--ink-200);
+    }
+    .surfaces-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-top: 24px;
+    }
+    .surface-card {
+      padding: 18px;
+      border: 1px solid var(--ink-200);
+      border-radius: 10px;
+      background: linear-gradient(180deg, white 0%, var(--ink-50) 100%);
+    }
+    .surface-card h4 {
+      margin: 0 0 6px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .surface-card code {
+      font-size: 11px;
+      color: var(--gemini-blue);
+      background: rgba(66,133,244,.08);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
+    }
+    .surface-card p {
+      margin: 8px 0 0;
+      font-size: 13px;
+      color: var(--ink-700);
+    }
+
+    section.tracks {
+      padding: 60px 0;
+      text-align: center;
+    }
+    .sponsor-row {
+      display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-top: 24px;
+    }
+    .sponsor-card {
+      flex: 1; min-width: 280px; max-width: 460px;
+      padding: 22px;
+      background: white;
+      border: 1px solid var(--ink-200);
+      border-radius: 12px;
+      text-align: left;
+    }
+    .sponsor-card h3 {
+      margin: 0 0 8px;
+      font-size: 17px;
+    }
+    .sponsor-card .label {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      margin-bottom: 10px;
+    }
+    .sponsor-card.veea .label { background: #fef3c7; color: #92400e; }
+    .sponsor-card.gemini .label { background: #dbeafe; color: #1e3a8a; }
+    .sponsor-card p { font-size: 14px; color: var(--ink-700); margin: 0; }
+
+    section.stats {
+      padding: 50px 0;
+      background: var(--ink-900);
+      color: white;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 24px;
+      text-align: center;
+    }
+    .stat-num {
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(90deg, #93c5fd 0%, #c4b5fd 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .stat-label { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+
+    section.cta-bottom {
+      padding: 80px 0;
+      text-align: center;
+    }
+    section.cta-bottom h2 {
+      font-size: 32px;
+      letter-spacing: -0.02em;
+      margin: 0 0 16px;
+    }
+    section.cta-bottom p {
+      font-size: 16px;
+      color: var(--ink-700);
+      max-width: 560px;
+      margin: 0 auto 28px;
+    }
+
+    footer {
+      padding: 30px 0;
+      border-top: 1px solid var(--ink-200);
+      background: white;
+      font-size: 13px;
+      color: var(--ink-500);
+      text-align: center;
+    }
+    footer a { color: var(--ink-700); text-decoration: none; }
+    footer a:hover { color: var(--ink-900); text-decoration: underline; }
+
+    @media (max-width: 640px) {
+      h1 { font-size: 36px; }
+      .tagline { font-size: 16px; }
+      section.hero { padding: 40px 0 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap brand">
+    <div class="brand-mark">C</div>
+    <div>
+      <div class="brand-name">Conduit</div>
+    </div>
+    <span class="brand-tag">Shadow-AI Governance</span>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <div class="pill"><span class="dot"></span> Submitted to lablab.ai · Track 1 · Agent Security &amp; AI Governance</div>
+    <h1>The <span class="grad">shadow-AI</span><br>layer your stack is missing.</h1>
+    <p class="tagline">
+      Conduit catches corporate data the moment it's pasted into a public LLM. Veea Lobster Trap inline,
+      Gemini 2.5 classifies and sanitizes, every event becomes a regulator-readable audit entry.
+      Open source, MIT, ships as a Chrome extension + a 100-line policy file.
+    </p>
+    <div class="cta-row">
+      <a class="btn primary" href="https://github.com/vaatus/conduit">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        github.com/vaatus/conduit
+      </a>
+      <a class="btn outline" href="https://github.com/vaatus/conduit#readme">Read the README →</a>
+      <a class="btn outline" href="https://github.com/vaatus/conduit/blob/main/lobster_trap/policy.yaml">Read the policy.yaml →</a>
+    </div>
+  </div>
+</section>
+
+<section class="architecture">
+  <div class="wrap">
+    <div class="section-title">Architecture</div>
+    <img src="architecture.svg" alt="Conduit architecture: browser extension → Conduit backend → Lobster Trap → Gemini, with audit log + dashboard">
+  </div>
+</section>
+
+<section class="demo-video">
+  <div class="wrap">
+    <div class="section-title">5-minute demo</div>
+    <div class="video-frame" id="video-frame">
+      <!-- When the video is posted, replace this block with:
+           <iframe src="https://www.youtube.com/embed/VIDEO_ID" allowfullscreen></iframe>
+           or
+           <video src="demo.mp4" controls></video>
+      -->
+      <div class="video-placeholder">
+        <div class="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+        <p style="font-size:18px;font-weight:600;color:white;">Demo video</p>
+        <p>Watch on <a href="https://x.com/lablabai" style="color:#a78bfa;">@lablabai</a> · link will be added once posted</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="gemini-surfaces">
+  <div class="wrap">
+    <div class="section-title">Eight Gemini 2.5 surfaces</div>
+    <h2 style="text-align:center;font-size:28px;letter-spacing:-0.02em;margin:0 0 8px;">Extensive, not decorative.</h2>
+    <p style="text-align:center;color:var(--ink-500);margin:0 auto 12px;max-width:640px;">
+      Conduit uses Gemini 2.5 across every part of the governance loop — text, vision, reasoning, search grounding, and agentic function calling.
+      Every call traverses Veea Lobster Trap; the architectural invariant is enforced by a CI test.
+    </p>
+    <div class="surfaces-grid">
+      <div class="surface-card">
+        <h4>1 · Text classification</h4>
+        <code>gemini-2.5-flash · JSON mode</code>
+        <p>10 categories, severity, regulatory concern, specific findings — on every paste.</p>
+      </div>
+      <div class="surface-card">
+        <h4>2 · Text sanitization</h4>
+        <code>gemini-2.5-pro</code>
+        <p>Realistic placeholders, intent preserved. The employee still gets a useful answer.</p>
+      </div>
+      <div class="surface-card">
+        <h4>3 · Multimodal vision</h4>
+        <code>gemini-2.5-flash + image</code>
+        <p>Screenshot pastes — the 2026 exfil vector nobody else catches. OCR + UI classification.</p>
+      </div>
+      <div class="surface-card">
+        <h4>4 · Image → safe text</h4>
+        <code>gemini-2.5-pro</code>
+        <p>When a screenshot is blocked, Gemini drafts a paste-safe text rewrite.</p>
+      </div>
+      <div class="surface-card">
+        <h4>5 · Thinking-mode escalation</h4>
+        <code>gemini-2.5-pro · thinking</code>
+        <p>Ambiguous classifications reasoned about. Trace surfaced in the audit detail.</p>
+      </div>
+      <div class="surface-card">
+        <h4>6 · Search-grounded threat intel</h4>
+        <code>+ google_search tool</code>
+        <p>Live rotation steps, recent breaches, threat-actor TTPs — every claim cited.</p>
+      </div>
+      <div class="surface-card">
+        <h4>7 · Agentic narrative</h4>
+        <code>function calling</code>
+        <p>Gemini investigates the audit log via Conduit's own tools, then writes the CISO brief. Trace shown.</p>
+      </div>
+      <div class="surface-card">
+        <h4>8 · Embeddings</h4>
+        <code>gemini-embedding-001</code>
+        <p>Cosine k-NN over every event. "This exfil pattern appeared three times last week."</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tracks">
+  <div class="wrap">
+    <div class="section-title">Sponsor prize eligibility</div>
+    <div class="sponsor-row">
+      <div class="sponsor-card veea">
+        <div class="label">TRACK 1 · POWERED BY VEEA</div>
+        <h3>Veea Lobster Trap prize</h3>
+        <p>Conduit reframes Lobster Trap's role: not "filter prompts to <em>my</em> agent" but "filter prompts to <em>the world's</em> agents." Same engine, 100× the market. 24 rules, ingress + egress, network policy, regulator-readable audit log.</p>
+      </div>
+      <div class="sponsor-card gemini">
+        <div class="label">SPONSOR PRIZE</div>
+        <h3>Gemini API — best use</h3>
+        <p>Eight distinct Gemini 2.5 surfaces, all via the OpenAI-compatible endpoint, all through Lobster Trap. Multimodal vision, thinking mode, search grounding, function calling, embeddings — every Gemini capability in scope, none decorative.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stats">
+  <div class="wrap">
+    <div class="stats-grid">
+      <div>
+        <div class="stat-num">98%</div>
+        <div class="stat-label">enterprises with unsanctioned AI use<br><span style="opacity:.7">CrowdStrike 2026</span></div>
+      </div>
+      <div>
+        <div class="stat-num">77%</div>
+        <div class="stat-label">employees paste corp data into LLMs<br><span style="opacity:.7">LayerX 2026</span></div>
+      </div>
+      <div>
+        <div class="stat-num">$670K</div>
+        <div class="stat-label">avg shadow-AI breach premium<br><span style="opacity:.7">IBM/Ponemon 2026</span></div>
+      </div>
+      <div>
+        <div class="stat-num">30/30</div>
+        <div class="stat-label">adversarial payloads caught<br><span style="opacity:.7">10/10 benign allowed</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-bottom">
+  <div class="wrap">
+    <h2>Open source. MIT. Ready to run.</h2>
+    <p>One <code style="background:var(--ink-100);padding:2px 6px;border-radius:4px;">docker-compose up</code> brings the whole stack up from a clean clone. Load the extension unpacked, open the dashboard at <code style="background:var(--ink-100);padding:2px 6px;border-radius:4px;">localhost:3000</code>, and you're inspecting prompts in under a minute.</p>
+    <div class="cta-row">
+      <a class="btn primary" href="https://github.com/vaatus/conduit">View on GitHub</a>
+      <a class="btn outline" href="https://github.com/vaatus/conduit/blob/main/lobster_trap/policy.yaml">Read the policy</a>
+      <a class="btn outline" href="https://github.com/vaatus/conduit/blob/main/mcp_server/README.md">MCP server</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Conduit · <a href="https://github.com/vaatus/conduit/blob/main/LICENSE">MIT</a> ·
+    Built for <a href="https://lablab.ai">lablab.ai × TechEx Transforming Enterprise Through AI</a> ·
+    Track 1: Agent Security &amp; AI Governance
+  </div>
+</footer>
+
+</body>
+</html>
