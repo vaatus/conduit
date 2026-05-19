@@ -4,402 +4,762 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Conduit — Shadow-AI Governance · Browser-native DLP for public LLMs</title>
-  <meta name="description" content="Open-source shadow-AI governance. Veea Lobster Trap inline in the browser + 8 Gemini 2.5 surfaces (classify · sanitize · vision · search-grounded · agentic). MIT.">
+  <title>Conduit — see how it works · Shadow-AI Governance</title>
+  <meta name="description" content="Walk through the Conduit flow: paste → Lobster Trap inspect → Gemini classify → modal decision → audit log. Open source, MIT, Veea Lobster Trap + Gemini 2.5.">
   <meta property="og:title" content="Conduit — Shadow-AI Governance">
-  <meta property="og:description" content="Veea Lobster Trap in the browser, eight Gemini 2.5 surfaces, MIT open source. The shadow-AI layer your stack is missing.">
+  <meta property="og:description" content="Walk through how Conduit catches corporate data heading to public LLMs. Veea Lobster Trap + 8 Gemini 2.5 surfaces.">
   <meta property="og:image" content="https://vaatus.github.io/conduit/architecture.svg">
-  <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230f172a'/%3E%3Ctext x='50' y='68' font-family='ui-sans-serif,system-ui' font-size='60' font-weight='700' fill='white' text-anchor='middle'%3EC%3C/text%3E%3C/svg%3E">
   <style>
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --ink-50: #f8fafc;
       --ink-100: #f1f5f9;
       --ink-200: #e2e8f0;
+      --ink-300: #cbd5e1;
+      --ink-400: #94a3b8;
       --ink-500: #64748b;
       --ink-700: #334155;
       --ink-900: #0f172a;
       --accent: #7c3aed;
       --gemini-blue: #4285f4;
-      --veea-amber: #f59e0b;
+      --rose: #dc2626;
+      --rose-bg: #fee2e2;
+      --amber: #ca8a04;
+      --amber-bg: #fef3c7;
+      --emerald: #16a34a;
+      --emerald-bg: #dcfce7;
     }
-    html, body { margin: 0; padding: 0; }
-    body {
+    html, body {
       font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--ink-900);
-      background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+      background: var(--ink-50);
       line-height: 1.55;
       -webkit-font-smoothing: antialiased;
     }
-    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
-    header.top {
-      padding: 20px 0;
-      border-bottom: 1px solid var(--ink-200);
-      background: white;
-    }
-    .brand { display: flex; align-items: center; gap: 12px; }
-    .brand-mark {
-      width: 36px; height: 36px;
-      background: var(--ink-900);
-      color: white;
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 700; font-size: 18px;
-    }
-    .brand-name { font-weight: 600; letter-spacing: -0.01em; }
-    .brand-tag { color: var(--ink-500); font-size: 13px; margin-left: 8px; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+    a { color: inherit; }
 
-    section.hero {
-      padding: 60px 0 30px;
-      text-align: center;
-    }
-    .pill {
-      display: inline-flex; gap: 6px;
-      padding: 4px 12px;
-      background: white;
-      border: 1px solid var(--ink-200);
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--ink-700);
-      margin-bottom: 20px;
-    }
-    .pill .dot {
-      width: 8px; height: 8px;
-      background: var(--accent);
-      border-radius: 50%;
-      align-self: center;
-    }
-    h1 {
-      font-size: 56px;
-      letter-spacing: -0.03em;
-      line-height: 1.05;
-      font-weight: 700;
-      margin: 0 0 16px;
-    }
-    h1 .grad {
-      background: linear-gradient(90deg, var(--gemini-blue) 0%, var(--accent) 50%, var(--veea-amber) 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-    .tagline {
-      font-size: 19px;
-      color: var(--ink-700);
-      max-width: 720px;
-      margin: 0 auto 28px;
-    }
-    .cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 36px; }
-    .btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 11px 18px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      text-decoration: none;
-      transition: transform .08s ease, background .15s ease;
-      border: 1px solid transparent;
-    }
+    header.top { background: white; border-bottom: 1px solid var(--ink-200); padding: 16px 0; }
+    .brand-row { display: flex; align-items: center; gap: 12px; }
+    .brand-mark { width: 32px; height: 32px; background: var(--ink-900); color: white; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; }
+    .brand-name { font-weight: 600; }
+    .brand-tag { color: var(--ink-500); font-size: 12px; margin-left: 6px; }
+    .top-links { margin-left: auto; display: flex; gap: 8px; font-size: 13px; }
+    .top-links a { text-decoration: none; color: var(--ink-700); padding: 6px 12px; border-radius: 6px; }
+    .top-links a:hover { background: var(--ink-100); color: var(--ink-900); }
+    .top-links a.primary { background: var(--ink-900); color: white; }
+    .top-links a.primary:hover { background: var(--ink-700); }
+
+    /* ─── HERO ─── */
+    section.hero { padding: 56px 0 24px; text-align: center; }
+    .pill { display: inline-flex; gap: 8px; align-items: center; padding: 4px 12px; background: white; border: 1px solid var(--ink-200); border-radius: 999px; font-size: 12px; font-weight: 500; color: var(--ink-700); margin-bottom: 18px; }
+    .pill .dot { width: 7px; height: 7px; background: var(--emerald); border-radius: 50%; box-shadow: 0 0 0 4px rgba(22, 163, 74, .15); }
+    h1 { font-size: 48px; letter-spacing: -0.03em; line-height: 1.08; font-weight: 700; margin-bottom: 14px; }
+    h1 .grad { background: linear-gradient(90deg, var(--gemini-blue) 0%, var(--accent) 60%, #f59e0b 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .tagline { font-size: 18px; color: var(--ink-700); max-width: 700px; margin: 0 auto 24px; }
+    .cta-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; text-decoration: none; transition: transform .08s, background .15s; border: 1px solid transparent; }
     .btn:active { transform: translateY(1px); }
     .btn.primary { background: var(--ink-900); color: white; }
     .btn.primary:hover { background: var(--ink-700); }
     .btn.outline { background: white; color: var(--ink-900); border-color: var(--ink-200); }
     .btn.outline:hover { background: var(--ink-100); }
-    .btn .icon { width: 16px; height: 16px; fill: currentColor; }
+    .gh-icon { width: 14px; height: 14px; fill: currentColor; }
 
-    section.architecture {
+    /* ─── SECTION SHARED ─── */
+    section { padding: 56px 0; }
+    .section-title { text-align: center; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-500); margin-bottom: 12px; }
+    .section-heading { text-align: center; font-size: 30px; letter-spacing: -0.02em; font-weight: 700; margin-bottom: 8px; }
+    .section-sub { text-align: center; color: var(--ink-500); max-width: 620px; margin: 0 auto 32px; }
+
+    /* ─── SCENARIO TABS ─── */
+    .scenario-tabs { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; margin-bottom: 24px; }
+    .tab {
+      padding: 8px 18px;
       background: white;
-      border-top: 1px solid var(--ink-200);
-      border-bottom: 1px solid var(--ink-200);
-      padding: 40px 0;
-    }
-    .architecture img {
-      max-width: 100%;
-      height: auto;
-      display: block;
-      margin: 0 auto;
-      border-radius: 12px;
-      box-shadow: 0 12px 40px -10px rgba(15, 23, 42, .15);
-    }
-    .section-title {
-      text-align: center;
+      border: 1px solid var(--ink-200);
+      border-radius: 999px;
       font-size: 13px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--ink-500);
-      margin-bottom: 24px;
+      font-weight: 500;
+      color: var(--ink-700);
+      cursor: pointer;
+      transition: background .15s, color .15s, border-color .15s;
+      user-select: none;
     }
+    .tab:hover { background: var(--ink-100); }
+    .tab.active { background: var(--ink-900); color: white; border-color: var(--ink-900); }
+    .tab .num { font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace; font-size: 10px; opacity: .6; margin-right: 4px; }
 
-    section.demo-video {
-      padding: 60px 0;
-      text-align: center;
+    /* ─── 3-COLUMN FLOW ─── */
+    .scenario { display: none; }
+    .scenario.active { display: block; }
+    .flow {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      gap: 14px;
+      align-items: stretch;
     }
-    .video-frame {
-      max-width: 920px;
-      aspect-ratio: 16 / 9;
-      margin: 0 auto;
+    @media (max-width: 900px) {
+      .flow { grid-template-columns: 1fr; }
+      .flow .arrow { display: none; }
+    }
+    .stage {
+      background: white;
+      border: 1px solid var(--ink-200);
+      border-radius: 14px;
+      padding: 18px;
+      display: flex; flex-direction: column;
+      min-height: 380px;
+    }
+    .stage-label {
+      font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--ink-500); font-weight: 600;
+      display: flex; align-items: center; gap: 6px;
+      margin-bottom: 12px;
+    }
+    .stage-label .num {
+      width: 18px; height: 18px;
       background: var(--ink-900);
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 18px 50px -10px rgba(15, 23, 42, .35);
-      position: relative;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .video-frame iframe, .video-frame video {
-      width: 100%; height: 100%; border: 0;
-    }
-    .video-placeholder {
-      color: #cbd5e1; text-align: center; padding: 40px;
-    }
-    .video-placeholder .play {
-      width: 80px; height: 80px;
-      background: var(--accent);
+      color: white;
       border-radius: 50%;
       display: inline-flex; align-items: center; justify-content: center;
-      margin-bottom: 18px;
+      font-size: 10px; font-weight: 700;
     }
-    .video-placeholder .play svg { width: 32px; height: 32px; fill: white; margin-left: 4px; }
-    .video-placeholder p { margin: 6px 0; }
+    .arrow {
+      align-self: center;
+      color: var(--ink-300);
+      font-size: 20px;
+      padding: 0 4px;
+    }
 
-    section.gemini-surfaces {
-      padding: 60px 0;
+    /* ─── FAKE GEMINI INPUT ─── */
+    .fake-gemini {
+      background: #1f1f1f;
+      border-radius: 10px;
+      padding: 14px;
+      flex: 1;
+      display: flex; flex-direction: column;
+      color: #e8eaed;
+      font-size: 12px;
+    }
+    .fake-gemini .url-bar {
+      font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
+      font-size: 10px;
+      color: #9aa0a6;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #3c4043;
+      margin-bottom: 10px;
+    }
+    .fake-gemini .prompt-box {
+      background: #2d2e30;
+      border-radius: 8px;
+      padding: 10px;
+      flex: 1;
+      font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
+      font-size: 11px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.5;
+      max-height: 220px;
+      overflow: auto;
+    }
+    .fake-gemini .send-row {
+      display: flex; align-items: center; justify-content: flex-end;
+      gap: 8px; margin-top: 8px;
+      color: #9aa0a6; font-size: 10px;
+    }
+    .gemini-pip {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: linear-gradient(135deg, #4285f4, #ea4335, #fbbc04, #34a853);
+    }
+
+    /* ─── MODAL — block ─── */
+    .conduit-modal-mockup {
       background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 12px 36px -10px rgba(15,23,42,.18);
+      border: 1px solid var(--ink-200);
+      flex: 1;
+      display: flex; flex-direction: column;
+    }
+    .modal-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--ink-200);
+    }
+    .modal-header.block { background: linear-gradient(180deg, #fef2f2, white); }
+    .modal-header.redact { background: linear-gradient(180deg, #fffbeb, white); }
+    .modal-header.image { background: linear-gradient(180deg, #fffbeb, white); }
+    .modal-header h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .modal-header p { font-size: 12px; color: var(--ink-500); }
+    .modal-header code {
+      background: rgba(15,23,42,.06);
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
+      font-size: 11px;
+    }
+    .modal-body {
+      padding: 12px 16px;
+      font-size: 12px;
+      color: var(--ink-700);
+      background: var(--ink-50);
+      border-bottom: 1px solid var(--ink-200);
+    }
+    .modal-diff {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--ink-200);
+      flex: 1;
+      min-height: 130px;
+    }
+    .modal-diff > div {
+      background: white;
+      padding: 10px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .modal-diff pre {
+      font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
+      font-size: 10.5px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: var(--ink-700);
+      line-height: 1.5;
+      flex: 1;
+      overflow: auto;
+      max-height: 150px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      width: max-content;
+    }
+    .badge.danger { background: var(--rose-bg); color: #991b1b; }
+    .badge.success { background: var(--emerald-bg); color: #166534; }
+    .badge.warn { background: var(--amber-bg); color: #92400e; }
+    .modal-actions {
+      padding: 10px 16px;
+      display: flex; gap: 6px; justify-content: flex-end;
       border-top: 1px solid var(--ink-200);
     }
+    .modal-btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      border: 1px solid var(--ink-200);
+      background: white;
+      color: var(--ink-900);
+      cursor: pointer;
+    }
+    .modal-btn.primary { background: var(--ink-900); color: white; border-color: var(--ink-900); }
+    .modal-btn.warn { background: white; color: #92400e; border-color: #fcd34d; }
+
+    /* ─── EVENT CARD ─── */
+    .event-card {
+      background: white;
+      border: 1px solid var(--ink-200);
+      border-radius: 10px;
+      padding: 14px;
+      flex: 1;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .event-id { font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace; font-size: 11px; color: var(--ink-500); }
+    .event-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .pill-small { display: inline-block; padding: 1px 7px; border-radius: 999px; background: var(--ink-100); color: var(--ink-700); font-size: 11px; font-weight: 500; }
+    .pill-small.rule { background: rgba(124,58,237,.08); color: var(--accent); font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace; font-size: 10px; }
+    .event-detail-list {
+      list-style: none;
+      font-size: 12px;
+      color: var(--ink-700);
+      display: flex; flex-direction: column; gap: 6px;
+      border-top: 1px solid var(--ink-100);
+      padding-top: 10px;
+    }
+    .event-detail-list li { display: flex; justify-content: space-between; }
+    .event-detail-list li span:first-child { color: var(--ink-500); font-size: 11px; }
+
+    /* ─── DASHBOARD PREVIEW ─── */
+    .dashboard-preview {
+      background: var(--ink-50);
+      border-radius: 12px;
+      border: 1px solid var(--ink-200);
+      padding: 24px;
+      margin-top: 32px;
+    }
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+    .stat-tile {
+      background: white;
+      border: 1px solid var(--ink-200);
+      border-radius: 10px;
+      padding: 14px;
+    }
+    .stat-tile .label { font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-500); }
+    .stat-tile .num { font-size: 24px; font-weight: 700; margin-top: 4px; }
+    .stat-tile.block .num { color: var(--rose); }
+    .stat-tile.redact .num { color: var(--amber); }
+    .stat-tile.allow .num { color: var(--emerald); }
+
+    .feed-mock { background: white; border: 1px solid var(--ink-200); border-radius: 10px; margin-top: 12px; }
+    .feed-mock > div {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--ink-100);
+      display: flex; gap: 12px; align-items: center;
+      font-size: 12px;
+    }
+    .feed-mock > div:last-child { border-bottom: none; }
+    .feed-mock .dec-pill { width: 60px; flex-shrink: 0; text-align: center; }
+    .feed-mock .arrow-dest { color: var(--ink-500); font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace; font-size: 11px; }
+    .feed-mock .excerpt { color: var(--ink-700); font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace; font-size: 11px; flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .feed-mock .rule-name { color: var(--ink-500); font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace; font-size: 10px; }
+
+    /* ─── ARCHITECTURE ─── */
+    .architecture-section { background: white; border-top: 1px solid var(--ink-200); border-bottom: 1px solid var(--ink-200); }
+    .architecture-section img { max-width: 100%; height: auto; display: block; margin: 0 auto; border-radius: 10px; }
+
+    /* ─── GEMINI SURFACES ─── */
     .surfaces-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 14px;
-      margin-top: 24px;
+      gap: 12px;
     }
     .surface-card {
-      padding: 18px;
+      padding: 16px;
+      background: white;
       border: 1px solid var(--ink-200);
       border-radius: 10px;
-      background: linear-gradient(180deg, white 0%, var(--ink-50) 100%);
     }
-    .surface-card h4 {
-      margin: 0 0 6px;
-      font-size: 14px;
-      font-weight: 600;
+    .surface-card .surface-num {
+      display: inline-block;
+      width: 22px; height: 22px;
+      background: var(--gemini-blue);
+      color: white;
+      border-radius: 5px;
+      font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 8px;
     }
+    .surface-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
     .surface-card code {
-      font-size: 11px;
+      font-size: 10px;
       color: var(--gemini-blue);
       background: rgba(66,133,244,.08);
-      padding: 1px 6px;
-      border-radius: 4px;
+      padding: 1px 5px;
+      border-radius: 3px;
       font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
     }
-    .surface-card p {
-      margin: 8px 0 0;
-      font-size: 13px;
-      color: var(--ink-700);
-    }
+    .surface-card p { margin-top: 8px; font-size: 12.5px; color: var(--ink-700); line-height: 1.5; }
 
-    section.tracks {
-      padding: 60px 0;
-      text-align: center;
-    }
-    .sponsor-row {
-      display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-top: 24px;
-    }
-    .sponsor-card {
-      flex: 1; min-width: 280px; max-width: 460px;
-      padding: 22px;
-      background: white;
-      border: 1px solid var(--ink-200);
-      border-radius: 12px;
-      text-align: left;
-    }
-    .sponsor-card h3 {
-      margin: 0 0 8px;
-      font-size: 17px;
-    }
-    .sponsor-card .label {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      margin-bottom: 10px;
-    }
+    /* ─── SPONSORS ─── */
+    .sponsor-row { display: flex; gap: 14px; flex-wrap: wrap; }
+    .sponsor-card { flex: 1; min-width: 280px; padding: 20px; background: white; border: 1px solid var(--ink-200); border-radius: 12px; }
+    .sponsor-card .label { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10px; letter-spacing: 0.06em; font-weight: 600; margin-bottom: 10px; }
     .sponsor-card.veea .label { background: #fef3c7; color: #92400e; }
     .sponsor-card.gemini .label { background: #dbeafe; color: #1e3a8a; }
-    .sponsor-card p { font-size: 14px; color: var(--ink-700); margin: 0; }
+    .sponsor-card h3 { font-size: 17px; margin-bottom: 8px; }
+    .sponsor-card p { font-size: 13px; color: var(--ink-700); }
 
-    section.stats {
-      padding: 50px 0;
-      background: var(--ink-900);
-      color: white;
-    }
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 24px;
-      text-align: center;
-    }
-    .stat-num {
-      font-size: 36px;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      background: linear-gradient(90deg, #93c5fd 0%, #c4b5fd 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-    .stat-label { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+    /* ─── STATS DARK ─── */
+    section.stats { background: var(--ink-900); color: white; padding: 50px 0; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 24px; text-align: center; }
+    .stat-num-large { font-size: 36px; font-weight: 700; letter-spacing: -0.02em; background: linear-gradient(90deg, #93c5fd, #c4b5fd); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .stat-label-large { font-size: 13px; color: #94a3b8; margin-top: 4px; }
 
-    section.cta-bottom {
-      padding: 80px 0;
-      text-align: center;
-    }
-    section.cta-bottom h2 {
-      font-size: 32px;
-      letter-spacing: -0.02em;
-      margin: 0 0 16px;
-    }
-    section.cta-bottom p {
-      font-size: 16px;
-      color: var(--ink-700);
-      max-width: 560px;
-      margin: 0 auto 28px;
-    }
-
-    footer {
-      padding: 30px 0;
-      border-top: 1px solid var(--ink-200);
-      background: white;
-      font-size: 13px;
-      color: var(--ink-500);
-      text-align: center;
-    }
-    footer a { color: var(--ink-700); text-decoration: none; }
-    footer a:hover { color: var(--ink-900); text-decoration: underline; }
+    footer { background: white; border-top: 1px solid var(--ink-200); padding: 24px 0; font-size: 12px; color: var(--ink-500); text-align: center; }
 
     @media (max-width: 640px) {
-      h1 { font-size: 36px; }
-      .tagline { font-size: 16px; }
-      section.hero { padding: 40px 0 20px; }
+      h1 { font-size: 32px; }
+      .tagline { font-size: 15px; }
     }
   </style>
 </head>
 <body>
 
 <header class="top">
-  <div class="wrap brand">
+  <div class="wrap brand-row">
     <div class="brand-mark">C</div>
     <div>
       <div class="brand-name">Conduit</div>
     </div>
     <span class="brand-tag">Shadow-AI Governance</span>
+    <div class="top-links">
+      <a href="#how-it-works">How it works</a>
+      <a href="#gemini">Gemini surfaces</a>
+      <a href="#architecture">Architecture</a>
+      <a class="primary" href="https://github.com/vaatus/conduit">GitHub →</a>
+    </div>
   </div>
 </header>
 
 <section class="hero">
   <div class="wrap">
-    <div class="pill"><span class="dot"></span> Submitted to lablab.ai · Track 1 · Agent Security &amp; AI Governance</div>
-    <h1>The <span class="grad">shadow-AI</span><br>layer your stack is missing.</h1>
+    <div class="pill"><span class="dot"></span>Submitted to lablab.ai · Track 1 · Agent Security &amp; AI Governance</div>
+    <h1>See how Conduit stops <span class="grad">corporate data</span><br>before it reaches a public LLM.</h1>
     <p class="tagline">
-      Conduit catches corporate data the moment it's pasted into a public LLM. Veea Lobster Trap inline,
-      Gemini 2.5 classifies and sanitizes, every event becomes a regulator-readable audit entry.
-      Open source, MIT, ships as a Chrome extension + a 100-line policy file.
+      A Chromium extension + FastAPI backend that inspects every paste headed to ChatGPT, Claude, Gemini,
+      Copilot or Perplexity. Veea Lobster Trap classifies, Gemini 2.5 rewrites, every event becomes a regulator-readable audit entry.
     </p>
     <div class="cta-row">
-      <a class="btn primary" href="https://github.com/vaatus/conduit">
-        <svg class="icon" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+      <a class="btn primary" href="#how-it-works">▶ Walk through the flow</a>
+      <a class="btn outline" href="https://github.com/vaatus/conduit">
+        <svg class="gh-icon" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
         github.com/vaatus/conduit
       </a>
-      <a class="btn outline" href="https://github.com/vaatus/conduit#readme">Read the README →</a>
-      <a class="btn outline" href="https://github.com/vaatus/conduit/blob/main/lobster_trap/policy.yaml">Read the policy.yaml →</a>
     </div>
   </div>
 </section>
 
-<section class="architecture">
+<!-- ═══════════════════ HOW IT WORKS — 3 SCENARIOS ═══════════════════ -->
+<section id="how-it-works" style="background:white;border-top:1px solid var(--ink-200);">
+  <div class="wrap">
+    <div class="section-title">How it works</div>
+    <h2 class="section-heading">Three scenarios. One policy. Zero false positives.</h2>
+    <p class="section-sub">Every paste flows: <b>employee → Conduit inspect → modal → audit log</b>. Pick a scenario to step through.</p>
+
+    <div class="scenario-tabs">
+      <button class="tab active" data-tab="block"><span class="num">A</span>Credential exfil → BLOCK</button>
+      <button class="tab" data-tab="redact"><span class="num">B</span>Customer PII → REDACT</button>
+      <button class="tab" data-tab="image"><span class="num">C</span>Screenshot → Multimodal redact</button>
+    </div>
+
+    <!-- ─── Scenario A: Hard block ─── -->
+    <div class="scenario active" id="scenario-block">
+      <div class="flow">
+        <div class="stage">
+          <div class="stage-label"><span class="num">1</span>Employee pastes into Gemini</div>
+          <div class="fake-gemini">
+            <div class="url-bar">🔒 gemini.google.com</div>
+            <div class="prompt-box">Hey Gemini, I'm debugging an S3 access issue in production. My AWS access key is AKIAIOSFODNN7EXAMPLE and the secret is wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY. Can you help me figure out why list-objects is failing intermittently against the prod-billing bucket?</div>
+            <div class="send-row"><div class="gemini-pip"></div>Send</div>
+          </div>
+        </div>
+
+        <div class="arrow">→</div>
+
+        <div class="stage">
+          <div class="stage-label"><span class="num">2</span>Conduit modal — BLOCK</div>
+          <div class="conduit-modal-mockup">
+            <div class="modal-header block">
+              <h3>🛑 Blocked — corporate data egress</h3>
+              <p>Lobster Trap matched rule <code>block_aws_access_key</code>. Severity <b>critical</b>.</p>
+            </div>
+            <div class="modal-body">[CONDUIT] AWS access key detected. Use the internal AI gateway.</div>
+            <div style="padding:14px 16px;background:white;flex:1;">
+              <div style="font-size:11px;color:var(--ink-500);letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px;">Why this was blocked</div>
+              <ul style="font-size:12px;color:var(--ink-700);padding-left:18px;line-height:1.7;">
+                <li>Pattern <code style="background:rgba(15,23,42,.06);padding:1px 4px;border-radius:3px;font-size:11px;">AKIA[0-9A-Z]{16}</code> matched at LT layer</li>
+                <li>No Gemini call made — credential never left the browser</li>
+                <li>Logged with severity <span class="badge danger">CRITICAL</span> for the CISO audit</li>
+              </ul>
+            </div>
+            <div class="modal-actions">
+              <button class="modal-btn primary">Dismiss</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="arrow">→</div>
+
+        <div class="stage">
+          <div class="stage-label"><span class="num">3</span>Audit event in the dashboard</div>
+          <div class="event-card">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <span class="badge danger">BLOCK</span>
+              <span class="badge danger">CRITICAL</span>
+              <span class="event-id">evt_98259…</span>
+            </div>
+            <div class="event-row">
+              <span class="pill-small">credentials</span>
+              <span class="pill-small rule">block_aws_access_key</span>
+            </div>
+            <ul class="event-detail-list">
+              <li><span>Destination</span><span>gemini.google.com</span></li>
+              <li><span>User</span><span>u_8a7c…</span></li>
+              <li><span>Trigger</span><span>paste</span></li>
+              <li><span>Char count</span><span>347</span></li>
+              <li><span>Time</span><span>14:32:11 UTC</span></li>
+            </ul>
+            <div style="font-size:11px;color:var(--ink-500);background:var(--ink-50);padding:8px;border-radius:6px;">
+              💡 Click <b>Enrich with Gemini Search</b> on this event for live threat-intel: rotation steps from AWS docs, recent breaches, actor TTPs.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Scenario B: Redact + Gemini sanitize ─── -->
+    <div class="scenario" id="scenario-redact">
+      <div class="flow">
+        <div class="stage">
+          <div class="stage-label"><span class="num">1</span>Employee pastes customer data</div>
+          <div class="fake-gemini">
+            <div class="url-bar">🔒 gemini.google.com</div>
+            <div class="prompt-box">Here's our top-5 customer roster:
+name,email,ARR
+Alice Smith,alice@acme.com,$240K
+Bob Jones,bob@acme.com,$180K
+Carol Liu,carol@acme.com,$95K
+David Park,david@acme.com,$310K
+
+Can you write me a Python function that flags accounts with ARR &gt; $200K?</div>
+            <div class="send-row"><div class="gemini-pip"></div>Send</div>
+          </div>
+        </div>
+
+        <div class="arrow">→</div>
+
+        <div class="stage">
+          <div class="stage-label"><span class="num">2</span>Conduit modal — REDACT diff</div>
+          <div class="conduit-modal-mockup">
+            <div class="modal-header redact">
+              <h3>⚠ Sensitive content detected</h3>
+              <p>Rule <code>redact_email_addresses</code> · categories <b>customer_pii</b> · severity <b>high</b></p>
+            </div>
+            <div class="modal-body">Customer PII detected. Gemini 2.5 Pro generated a sanitized version below. Question survives, data doesn't.</div>
+            <div class="modal-diff">
+              <div>
+                <span class="badge danger">Original</span>
+                <pre>Alice Smith,alice@acme.com,$240K
+Bob Jones,bob@acme.com,$180K
+Carol Liu,carol@acme.com,$95K
+David Park,david@acme.com,$310K</pre>
+              </div>
+              <div>
+                <span class="badge success">Sanitized by Gemini</span>
+                <pre>Person A,user-a@example.com,$240K
+Person B,user-b@example.com,$180K
+Person C,user-c@example.com,$95K
+Person D,user-d@example.com,$310K</pre>
+              </div>
+            </div>
+            <div class="modal-actions">
+              <button class="modal-btn">Cancel</button>
+              <button class="modal-btn warn">Send original anyway</button>
+              <button class="modal-btn primary">Use sanitized</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="arrow">→</div>
+
+        <div class="stage">
+          <div class="stage-label"><span class="num">3</span>Audit event with sanitized diff</div>
+          <div class="event-card">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <span class="badge warn">REDACT</span>
+              <span class="badge warn">HIGH</span>
+              <span class="event-id">evt_8f3c…</span>
+            </div>
+            <div class="event-row">
+              <span class="pill-small">customer_pii</span>
+              <span class="pill-small rule">redact_email_addresses</span>
+              <span class="pill-small" style="background:rgba(124,58,237,.08);color:var(--accent);">GDPR</span>
+            </div>
+            <ul class="event-detail-list">
+              <li><span>Destination</span><span>gemini.google.com</span></li>
+              <li><span>Sanitized by</span><span>gemini-2.5-pro</span></li>
+              <li><span>Action taken</span><span>Use sanitized ✓</span></li>
+              <li><span>Char count</span><span>318</span></li>
+            </ul>
+            <div style="font-size:11px;color:var(--ink-500);background:var(--ink-50);padding:8px;border-radius:6px;">
+              💡 Gemini's <b>Embeddings</b> already linked this to 3 similar prior events — click <b>Find similar</b> to see the cluster.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Scenario C: Multimodal screenshot ─── -->
+    <div class="scenario" id="scenario-image">
+      <div class="flow">
+        <div class="stage">
+          <div class="stage-label"><span class="num">1</span>Employee pastes a screenshot</div>
+          <div class="fake-gemini">
+            <div class="url-bar">🔒 gemini.google.com · 📎 image attached</div>
+            <div style="background:white;border-radius:6px;padding:12px;flex:1;display:flex;align-items:center;justify-content:center;">
+              <div style="border:1px solid #d1d5db;border-radius:4px;background:#f8fafc;padding:8px;font-size:10px;font-family:ui-monospace,Menlo,monospace;width:100%;max-width:320px;">
+                <div style="display:grid;grid-template-columns:1fr 1.5fr 0.7fr;gap:0;border-bottom:1px solid #e2e8f0;padding-bottom:4px;margin-bottom:4px;font-weight:600;">
+                  <div>name</div><div>email</div><div>ARR</div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1.5fr 0.7fr;gap:0;font-size:9px;color:#475569;">
+                  <div>Alice Smith</div><div>alice@acme.com</div><div>$240K</div>
+                  <div>Bob Jones</div><div>bob@acme.com</div><div>$180K</div>
+                  <div>Carol Liu</div><div>carol@acme.com</div><div>$95K</div>
+                </div>
+              </div>
+            </div>
+            <div class="send-row"><div class="gemini-pip"></div>Send</div>
+          </div>
+        </div>
+
+        <div class="arrow">→</div>
+
+        <div class="stage">
+          <div class="stage-label"><span class="num">2</span>Conduit + Gemini Vision</div>
+          <div class="conduit-modal-mockup">
+            <div class="modal-header image">
+              <h3>📷 Screenshot inspected by Gemini Vision</h3>
+              <p>UI type <b>crm_dashboard</b> · severity <b>high</b> · categories <b>customer_pii, financial_data</b></p>
+            </div>
+            <div class="modal-body">Screenshot contains sensitive content. Paste the generated text alternative instead of the image.</div>
+            <div class="modal-diff">
+              <div>
+                <span class="badge danger">Extracted (OCR)</span>
+                <pre>name, email, ARR
+Alice Smith, alice@…, $240K
+Bob Jones, bob@…, $180K
+Carol Liu, carol@…, $95K</pre>
+              </div>
+              <div>
+                <span class="badge success">Safe text alternative</span>
+                <pre>I have a CRM dashboard showing 3 customer rows with columns name, email, ARR. Can you write a Python function that flags accounts with ARR &gt; $200K?</pre>
+              </div>
+            </div>
+            <div class="modal-actions">
+              <button class="modal-btn">Discard image</button>
+              <button class="modal-btn primary">Paste safe alternative</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="arrow">→</div>
+
+        <div class="stage">
+          <div class="stage-label"><span class="num">3</span>Multimodal audit event</div>
+          <div class="event-card">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <span class="badge warn">REDACT</span>
+              <span class="badge warn">HIGH</span>
+              <span class="event-id">evt_5f3b…</span>
+              <span class="pill-small" style="background:rgba(66,133,244,.1);color:var(--gemini-blue);">📷 image</span>
+            </div>
+            <div class="event-row">
+              <span class="pill-small">customer_pii</span>
+              <span class="pill-small">financial_data</span>
+              <span class="pill-small" style="background:rgba(124,58,237,.08);color:var(--accent);">GDPR</span>
+            </div>
+            <ul class="event-detail-list">
+              <li><span>UI type</span><span>crm_dashboard</span></li>
+              <li><span>MIME</span><span>image/png</span></li>
+              <li><span>Classified by</span><span>gemini-2.5-flash + vision</span></li>
+              <li><span>Alternative by</span><span>gemini-2.5-pro</span></li>
+            </ul>
+            <div style="font-size:11px;color:var(--ink-500);background:var(--ink-50);padding:8px;border-radius:6px;">
+              💡 Screenshots are the <b>fastest-growing</b> 2026 exfil vector. Text-only DLP misses them. Conduit catches them via Gemini Vision.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Dashboard preview below scenarios ─── -->
+    <div class="dashboard-preview">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div>
+          <div style="font-size:11px;letter-spacing:0.05em;text-transform:uppercase;color:var(--ink-500);">CISO Dashboard preview · last 24h</div>
+          <h3 style="font-size:18px;margin-top:4px;">Live audit feed + Gemini-powered analytics</h3>
+        </div>
+        <span class="badge success">Live polling /events</span>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-tile"><div class="label">Events (24h)</div><div class="num">47</div></div>
+        <div class="stat-tile block"><div class="label">Blocked</div><div class="num">3</div></div>
+        <div class="stat-tile redact"><div class="label">Redacted</div><div class="num">18</div></div>
+        <div class="stat-tile allow"><div class="label">Allowed</div><div class="num">26</div></div>
+      </div>
+
+      <div class="feed-mock">
+        <div>
+          <div class="dec-pill"><span class="badge danger">BLOCK</span></div>
+          <span class="arrow-dest">→ gemini.google.com</span>
+          <span class="excerpt">my AWS key is AKIAIOSFODNN7EXAMPLE…</span>
+          <span class="rule-name">block_aws_access_key</span>
+        </div>
+        <div>
+          <div class="dec-pill"><span class="badge warn">REDACT</span></div>
+          <span class="arrow-dest">→ gemini.google.com</span>
+          <span class="excerpt">[image:crm_dashboard] customer roster screenshot</span>
+          <span class="rule-name">vision · gemini-2.5-flash</span>
+        </div>
+        <div>
+          <div class="dec-pill"><span class="badge warn">REDACT</span></div>
+          <span class="arrow-dest">→ chatgpt.com</span>
+          <span class="excerpt">Q3 forecast: revenue $42.1M, EBITDA $7.3M, miss vs guidance, board…</span>
+          <span class="rule-name">flag_strategy_or_finance_markers</span>
+        </div>
+        <div>
+          <div class="dec-pill"><span class="badge success">ALLOW</span></div>
+          <span class="arrow-dest">→ claude.ai</span>
+          <span class="excerpt">Explain the difference between TCP and UDP with examples…</span>
+          <span class="rule-name">—</span>
+        </div>
+        <div>
+          <div class="dec-pill"><span class="badge warn">REDACT</span></div>
+          <span class="arrow-dest">→ gemini.google.com</span>
+          <span class="excerpt">class AcmeBillingEngine: def __init__(self, customer_id):…</span>
+          <span class="rule-name">flag_source_code_indicators</span>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:14px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:240px;background:white;border:1px solid var(--ink-200);border-radius:10px;padding:14px;">
+          <div style="font-size:11px;letter-spacing:0.05em;text-transform:uppercase;color:var(--ink-500);margin-bottom:6px;">Daily CISO brief · gemini-2.5-pro</div>
+          <p style="font-size:12.5px;color:var(--ink-700);line-height:1.6;">"Engineering users attempted 3 critical credential exfiltration events in the last 24h, all blocked at the Lobster Trap layer. Finance users redacted 8 events containing customer PII, the largest cluster pasted into ChatGPT. Recommend reviewing the 2 policy overrides triggered by user u_8a7c."</p>
+        </div>
+        <div style="flex:1;min-width:240px;background:white;border:1px solid var(--ink-200);border-radius:10px;padding:14px;">
+          <div style="font-size:11px;letter-spacing:0.05em;text-transform:uppercase;color:var(--ink-500);margin-bottom:6px;">Agentic investigation · function calling</div>
+          <div style="font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:var(--ink-700);line-height:1.7;">
+            <div style="border-left:2px solid var(--accent);padding-left:8px;margin-bottom:4px;"><b>get_stats</b>({hours:24}) → 47 events, 3 critical</div>
+            <div style="border-left:2px solid var(--accent);padding-left:8px;margin-bottom:4px;"><b>list_recent_events</b>({decision:"block"}) → [evt_98259, evt_8f3c, evt_5f3b]</div>
+            <div style="border-left:2px solid var(--accent);padding-left:8px;"><b>get_event_detail</b>({event_id:"evt_98259"}) → AWS key, gemini.google.com</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ GEMINI SURFACES ═══════════════════ -->
+<section id="gemini" style="background:var(--ink-50);">
+  <div class="wrap">
+    <div class="section-title">Gemini integration</div>
+    <h2 class="section-heading">Eight Gemini 2.5 surfaces. Not decorative.</h2>
+    <p class="section-sub">Every part of the governance loop touches Gemini — text, vision, reasoning, search grounding, agentic function calling. All routed through Veea Lobster Trap, enforced by a CI test.</p>
+    <div class="surfaces-grid">
+      <div class="surface-card"><div class="surface-num">1</div><h4>Text classification</h4><code>gemini-2.5-flash · JSON</code><p>10 categories, severity, regulatory concern, specific findings — on every paste.</p></div>
+      <div class="surface-card"><div class="surface-num">2</div><h4>Text sanitization</h4><code>gemini-2.5-pro</code><p>Realistic placeholders, intent preserved. Employee still gets a useful answer.</p></div>
+      <div class="surface-card"><div class="surface-num">3</div><h4>Multimodal vision</h4><code>flash + image</code><p>Screenshot pastes — the 2026 exfil vector nobody else catches. OCR + UI classification.</p></div>
+      <div class="surface-card"><div class="surface-num">4</div><h4>Image → safe text</h4><code>gemini-2.5-pro</code><p>When a screenshot is blocked, Gemini drafts a paste-safe text rewrite.</p></div>
+      <div class="surface-card"><div class="surface-num">5</div><h4>Thinking-mode</h4><code>pro · thinking</code><p>Ambiguous cases reasoned about. Trace surfaced in the audit detail.</p></div>
+      <div class="surface-card"><div class="surface-num">6</div><h4>Search-grounded intel</h4><code>+ google_search</code><p>Live rotation steps, recent breaches, threat-actor TTPs — every claim cited.</p></div>
+      <div class="surface-card"><div class="surface-num">7</div><h4>Agentic narrative</h4><code>function calling</code><p>Gemini investigates the audit log via Conduit's tools, then writes the brief.</p></div>
+      <div class="surface-card"><div class="surface-num">8</div><h4>Embeddings</h4><code>embedding-001</code><p>k-NN clustering: "this pattern appeared three times last week."</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ ARCHITECTURE ═══════════════════ -->
+<section id="architecture" class="architecture-section">
   <div class="wrap">
     <div class="section-title">Architecture</div>
-    <img src="architecture.svg" alt="Conduit architecture: browser extension → Conduit backend → Lobster Trap → Gemini, with audit log + dashboard">
+    <h2 class="section-heading" style="margin-bottom:24px;">The whole stack, end to end.</h2>
+    <img src="architecture.svg" alt="Conduit architecture: browser extension → Conduit backend → Lobster Trap → Gemini, with audit log + dashboard + MCP server">
   </div>
 </section>
 
-<section class="demo-video">
-  <div class="wrap">
-    <div class="section-title">5-minute demo</div>
-    <div class="video-frame" id="video-frame">
-      <!-- When the video is posted, replace this block with:
-           <iframe src="https://www.youtube.com/embed/VIDEO_ID" allowfullscreen></iframe>
-           or
-           <video src="demo.mp4" controls></video>
-      -->
-      <div class="video-placeholder">
-        <div class="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
-        <p style="font-size:18px;font-weight:600;color:white;">Demo video</p>
-        <p>Watch on <a href="https://x.com/lablabai" style="color:#a78bfa;">@lablabai</a> · link will be added once posted</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="gemini-surfaces">
-  <div class="wrap">
-    <div class="section-title">Eight Gemini 2.5 surfaces</div>
-    <h2 style="text-align:center;font-size:28px;letter-spacing:-0.02em;margin:0 0 8px;">Extensive, not decorative.</h2>
-    <p style="text-align:center;color:var(--ink-500);margin:0 auto 12px;max-width:640px;">
-      Conduit uses Gemini 2.5 across every part of the governance loop — text, vision, reasoning, search grounding, and agentic function calling.
-      Every call traverses Veea Lobster Trap; the architectural invariant is enforced by a CI test.
-    </p>
-    <div class="surfaces-grid">
-      <div class="surface-card">
-        <h4>1 · Text classification</h4>
-        <code>gemini-2.5-flash · JSON mode</code>
-        <p>10 categories, severity, regulatory concern, specific findings — on every paste.</p>
-      </div>
-      <div class="surface-card">
-        <h4>2 · Text sanitization</h4>
-        <code>gemini-2.5-pro</code>
-        <p>Realistic placeholders, intent preserved. The employee still gets a useful answer.</p>
-      </div>
-      <div class="surface-card">
-        <h4>3 · Multimodal vision</h4>
-        <code>gemini-2.5-flash + image</code>
-        <p>Screenshot pastes — the 2026 exfil vector nobody else catches. OCR + UI classification.</p>
-      </div>
-      <div class="surface-card">
-        <h4>4 · Image → safe text</h4>
-        <code>gemini-2.5-pro</code>
-        <p>When a screenshot is blocked, Gemini drafts a paste-safe text rewrite.</p>
-      </div>
-      <div class="surface-card">
-        <h4>5 · Thinking-mode escalation</h4>
-        <code>gemini-2.5-pro · thinking</code>
-        <p>Ambiguous classifications reasoned about. Trace surfaced in the audit detail.</p>
-      </div>
-      <div class="surface-card">
-        <h4>6 · Search-grounded threat intel</h4>
-        <code>+ google_search tool</code>
-        <p>Live rotation steps, recent breaches, threat-actor TTPs — every claim cited.</p>
-      </div>
-      <div class="surface-card">
-        <h4>7 · Agentic narrative</h4>
-        <code>function calling</code>
-        <p>Gemini investigates the audit log via Conduit's own tools, then writes the CISO brief. Trace shown.</p>
-      </div>
-      <div class="surface-card">
-        <h4>8 · Embeddings</h4>
-        <code>gemini-embedding-001</code>
-        <p>Cosine k-NN over every event. "This exfil pattern appeared three times last week."</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="tracks">
+<!-- ═══════════════════ SPONSORS ═══════════════════ -->
+<section style="background:var(--ink-50);">
   <div class="wrap">
     <div class="section-title">Sponsor prize eligibility</div>
+    <h2 class="section-heading" style="margin-bottom:24px;">Track 1 + Gemini Best Use.</h2>
     <div class="sponsor-row">
       <div class="sponsor-card veea">
         <div class="label">TRACK 1 · POWERED BY VEEA</div>
@@ -407,7 +767,7 @@
         <p>Conduit reframes Lobster Trap's role: not "filter prompts to <em>my</em> agent" but "filter prompts to <em>the world's</em> agents." Same engine, 100× the market. 24 rules, ingress + egress, network policy, regulator-readable audit log.</p>
       </div>
       <div class="sponsor-card gemini">
-        <div class="label">SPONSOR PRIZE</div>
+        <div class="label">GEMINI BEST-USE PRIZE</div>
         <h3>Gemini API — best use</h3>
         <p>Eight distinct Gemini 2.5 surfaces, all via the OpenAI-compatible endpoint, all through Lobster Trap. Multimodal vision, thinking mode, search grounding, function calling, embeddings — every Gemini capability in scope, none decorative.</p>
       </div>
@@ -415,37 +775,43 @@
   </div>
 </section>
 
+<!-- ═══════════════════ STATS ═══════════════════ -->
 <section class="stats">
   <div class="wrap">
     <div class="stats-grid">
       <div>
-        <div class="stat-num">98%</div>
-        <div class="stat-label">enterprises with unsanctioned AI use<br><span style="opacity:.7">CrowdStrike 2026</span></div>
+        <div class="stat-num-large">98%</div>
+        <div class="stat-label-large">enterprises with unsanctioned AI use<br><span style="opacity:.7">CrowdStrike 2026</span></div>
       </div>
       <div>
-        <div class="stat-num">77%</div>
-        <div class="stat-label">employees paste corp data into LLMs<br><span style="opacity:.7">LayerX 2026</span></div>
+        <div class="stat-num-large">77%</div>
+        <div class="stat-label-large">employees paste corp data into LLMs<br><span style="opacity:.7">LayerX 2026</span></div>
       </div>
       <div>
-        <div class="stat-num">$670K</div>
-        <div class="stat-label">avg shadow-AI breach premium<br><span style="opacity:.7">IBM/Ponemon 2026</span></div>
+        <div class="stat-num-large">$670K</div>
+        <div class="stat-label-large">avg shadow-AI breach premium<br><span style="opacity:.7">IBM/Ponemon 2026</span></div>
       </div>
       <div>
-        <div class="stat-num">30/30</div>
-        <div class="stat-label">adversarial payloads caught<br><span style="opacity:.7">10/10 benign allowed</span></div>
+        <div class="stat-num-large">30/30</div>
+        <div class="stat-label-large">adversarial payloads caught<br><span style="opacity:.7">10/10 benign allowed</span></div>
       </div>
     </div>
   </div>
 </section>
 
-<section class="cta-bottom">
+<!-- ═══════════════════ CTA ═══════════════════ -->
+<section style="text-align:center;">
   <div class="wrap">
-    <h2>Open source. MIT. Ready to run.</h2>
-    <p>One <code style="background:var(--ink-100);padding:2px 6px;border-radius:4px;">docker-compose up</code> brings the whole stack up from a clean clone. Load the extension unpacked, open the dashboard at <code style="background:var(--ink-100);padding:2px 6px;border-radius:4px;">localhost:3000</code>, and you're inspecting prompts in under a minute.</p>
+    <h2 class="section-heading">One command. Whole stack. MIT.</h2>
+    <p class="section-sub">
+      <code style="background:var(--ink-100);padding:2px 8px;border-radius:4px;font-family:ui-monospace,Menlo,monospace;">docker-compose up -d</code>
+      brings Lobster Trap, backend, dashboard, and MCP server up from a clean clone. Load the extension unpacked, open the dashboard, paste anything into ChatGPT.
+    </p>
     <div class="cta-row">
       <a class="btn primary" href="https://github.com/vaatus/conduit">View on GitHub</a>
       <a class="btn outline" href="https://github.com/vaatus/conduit/blob/main/lobster_trap/policy.yaml">Read the policy</a>
       <a class="btn outline" href="https://github.com/vaatus/conduit/blob/main/mcp_server/README.md">MCP server</a>
+      <a class="btn outline" href="https://github.com/vaatus/conduit/blob/main/backend/tests/results.txt">Adversarial tests</a>
     </div>
   </div>
 </section>
@@ -454,9 +820,22 @@
   <div class="wrap">
     Conduit · <a href="https://github.com/vaatus/conduit/blob/main/LICENSE">MIT</a> ·
     Built for <a href="https://lablab.ai">lablab.ai × TechEx Transforming Enterprise Through AI</a> ·
-    Track 1: Agent Security &amp; AI Governance
+    Track 1: Agent Security &amp; AI Governance · Veea Lobster Trap + Gemini 2.5
   </div>
 </footer>
+
+<script>
+  // Tab switching — vanilla JS, no deps.
+  document.querySelectorAll('.tab').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.tab;
+      document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t === tab));
+      document.querySelectorAll('.scenario').forEach((s) => {
+        s.classList.toggle('active', s.id === `scenario-${target}`);
+      });
+    });
+  });
+</script>
 
 </body>
 </html>
