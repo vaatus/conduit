@@ -140,10 +140,6 @@ Detailed file-by-file map lives in [`docs/policy-explainer.md`](docs/policy-expl
 
 That is the wedge.
 
-## Team
-
-[names], [contact]
-
 ## License
 
 MIT. See [`LICENSE`](LICENSE).
